@@ -45,7 +45,7 @@
         $.fn.hasHorizontalScrollBar = function() {
             return this.get(0).scrollWidth > this.innerWidth();
         };
-        var resizer = new CodeBlockResizer('figure.highlight');
+        var resizer = new CodeBlockResizer('.highlight');
         resizer.run();
     });
 }(jQuery);
