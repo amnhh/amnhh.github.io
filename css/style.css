@@ -236,8 +236,12 @@ div {
 
 .post {
   margin-top: 25px;
-  border-bottom: 3px dashed #ddd;
+  border-bottom: 1px dashed #ddd;
   padding-bottom: 30px;
+}
+
+.post:last-child {
+  border-bottom: 0;
 }
 
 .post.home .post-content {
