@@ -245,7 +245,7 @@ div {
 }
 
 .post.home .post-content {
-  color: #bbb;
+  opacity: .6;
 }
 
 .post .post-title {
