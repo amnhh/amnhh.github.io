@@ -1,0 +1,150 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content=""><title>Compilation -- 构建动作的执行者和管理者 | 叁歌</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.1.5"><link rel="stylesheet" type="text/css" href="/css/dark.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/normalize.css/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/purecss/build/pure-min.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script><link rel="icon" mask="" sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><script type="text/javascript" src="//cdn.jsdelivr.net/npm/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 5.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Compilation -- 构建动作的执行者和管理者</h1><a id="logo" href="/.">叁歌</a><p class="description">To be the best of best.</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Compilation -- 构建动作的执行者和管理者</h1><div class="post-meta">2021-01-31</div><div class="post-content"><h2 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h2><p>本文旨在通过阅读和调试 Compilation 模块相关的代码，了解编译的基本过程，学习编译过程中的关键步骤。</p>
+<p>相关参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/webpack/webpack/blob/master/lib/Compilation.js">https://github.com/webpack/webpack/blob/master/lib/Compilation.js</a></li>
+<li><a target="_blank" rel="noopener" href="https://frontendmasters.com/courses/webpack-plugins/compiler-compilation/">https://frontendmasters.com/courses/webpack-plugins/compiler-compilation/</a></li>
+</ul>
+<p>本文的 demo 代码，为：</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// greeting.js</span></span><br><span class="line"><span class="built_in">module</span>.exports = <span class="function"><span class="keyword">function</span> (<span class="params">name</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">document</span>.write(<span class="string">&#x27;Hello &#x27;</span> + name + <span class="string">&#x27;~&#x27;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// index.js</span></span><br><span class="line"><span class="keyword">import</span> greeting <span class="keyword">from</span> <span class="string">&#x27;./greeting&#x27;</span></span><br><span class="line">greeting(<span class="string">&#x27;anning&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// build.js</span></span><br><span class="line"><span class="keyword">const</span> config = <span class="built_in">require</span>(<span class="string">&#x27;./webpack.config&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> webpack = <span class="built_in">require</span>(<span class="string">&#x27;./webpack&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> compiler = webpack(config)</span><br><span class="line"></span><br><span class="line">compiler.run()</span><br><span class="line"></span><br><span class="line"><span class="comment">// webpack.config.js</span></span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">&#x27;path&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">  entry: path.resolve(__dirname, <span class="string">&#x27;./src/index.js&#x27;</span>),</span><br><span class="line">  output: &#123;</span><br><span class="line">    filename: <span class="string">&#x27;bundle.js&#x27;</span>,</span><br><span class="line">    path: path.resolve(__dirname, <span class="string">&#x27;dist/basic-build&#x27;</span>),</span><br><span class="line">  &#125;,</span><br><span class="line">  mode: <span class="string">&#x27;development&#x27;</span>,</span><br><span class="line">  devtool: <span class="literal">false</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="2-Compilation-做了些什么"><a href="#2-Compilation-做了些什么" class="headerlink" title="2. Compilation 做了些什么"></a>2. Compilation 做了些什么</h2><p>在这一小节，我想要简述下 Compilation 是什么，做了什么。</p>
+<p>我们从上一章讲 Compiler 可以知道，在执行完 make -&gt; compilation.finish -&gt; compilation.seal 之后，是拿着编译好的 compilation，去调用 compiler 的 emit. 可见我们本身的 compilation 在执行完全部的功能后，依然不是将 dist 直接输出到了文件中。</p>
+<p>一个 Compilation 所做的事情，即是将一个 “Module”，编译转化为”<em><strong>在浏览器上可以运行的模块</strong></em>“。Compilation 在这个过程中，其实就是将这个 “Module”，扔到一个名为 chunk 的盒子中，然后向其丢去一大堆的 Plugin，然后再执行一堆的优化步骤，最终产出这个”<em><strong>在浏览器上可以运行的模块</strong></em>“（取自<a target="_blank" rel="noopener" href="https://frontendmasters.com/courses/webpack-plugins/compiler-compilation/">Compiler&amp;Compilation 课程</a>），在源代码中，叫做 “module assets（模块资源）”，由 createModuleAssets 方法创建。</p>
+<p>一个 Compilation 实例生命周期内，各个方法的配合调用，即为一次编译的过程；</p>
+<p>Compilation 的各个方法各司其职，其中的几个主要步骤为：</p>
+<ul>
+<li>addEntry – 负责调起 _addModuleChain</li>
+<li>addModule – 负责添加 module 到当前 Compilation 实例，并执行一些类似</li>
+<li>_addModuleChain – 负责管理当前模块的一整套构建流程，包含编译当前模块、编译当前模块的依赖等</li>
+<li>buildModule – 负责编译当前模块 =&gt; loader 分析、loader runner 执行、依赖收集</li>
+<li>processModuleDependencies – 负责编译当前模块的依赖</li>
+<li>seal – 负责封存当前模块 =&gt; 优化当前模块、进 chunk 容器、hash 生成等</li>
+</ul>
+<h2 id="3-自-Compilation-进入视野开始"><a href="#3-自-Compilation-进入视野开始" class="headerlink" title="3. 自 Compilation 进入视野开始"></a>3. 自 Compilation 进入视野开始</h2><p>以我们现有的例子来看，Compiler 模块在触发 make 钩子前，会在 make hook call 的方法前，新建一个 compilation 实例，参数为：</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  normalModuleFactory, contextModuleFactory, compilationDependencies</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>拿到了这个 compilation 去触发 beforeCompile、compile、make 钩子。</p>
+<p>触发 make 钩子时，会运行 SingleEntryPlugin 时绑定的 tap：</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 为 make hook 绑定事件 SingleEntryPlugin</span></span><br><span class="line"><span class="comment">// 所以在 make 之前，就会触发 dep 和 addEntry.</span></span><br><span class="line">compiler.hooks.make.tapAsync(<span class="string">&#x27;SingleEntryPlugin&#x27;</span>, <span class="function">(<span class="params">compilation, callback</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> &#123; entry, name, context &#125; = <span class="built_in">this</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> dep = SingleEntryPlugin.createDependency(entry, name)</span><br><span class="line">  compilation.addEntry(context, dep, name, callback)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>我们可以看到，在名为 SingleEntryPlugin 的 tap 中，调用了 compilation 的 addEntry 方法<br>此处为 compilation 的主要方法，第一次进入到我们的视线中。</p>
+<p>此时我们简单梳理下 addEntry 前，会经历的主要步骤：<br><img src="/images/compilation-1.png" alt="Compilation 第一次出现在视野中.png"><br><em><strong>（****</strong>其中绿色的两个块，是 compiler.make 钩子中添加 compilation.addEntry 方法的核心步骤**<strong>**）</strong></em></p>
+<h2 id="4-addEntry-–-添加入口"><a href="#4-addEntry-–-添加入口" class="headerlink" title="4. addEntry – 添加入口"></a>4. addEntry – 添加入口</h2><p>Compilation 第一次进入我们视线，即是这个方法，这个方法也是 Compilation 个人理解里的通用入口，毕竟一次模块编译，总要从添加入口文件开始。<br>addEntry 执行过程中，除去一些 hook 的触发和内部属性集合的更新，可以理解就是一个 _addModuleChain 的代理方法，其做的事情主要也就是调起该方法，开启整个编译流程：</p>
+<p><img src="/images/compilation-2.png" alt="Compilation.addEntry.png"></p>
+<h2 id="5-addModuleChain-–-管理当前模块的构建流程"><a href="#5-addModuleChain-–-管理当前模块的构建流程" class="headerlink" title="5. _addModuleChain – 管理当前模块的构建流程"></a>5. _addModuleChain – 管理当前模块的构建流程</h2><p>_addModuleChain 这个内部方法，负责完成管理一整套的创建模块、调用模块的流程。<br>主要做的事情是：</p>
+<ul>
+<li>确定当前模块的类型，依次为依据寻找相应的 module factory, 也就是模块构造工厂</li>
+<li>使用模块构造工厂，去创建当前类别的模块，产出一个未完成的 Module</li>
+<li>如果模块需要编译，则调用 buildModule 去编译当前模块</li>
+<li>如果当前模块有依赖，则调用 processModuleDependencies 去编译模块的依赖</li>
+</ul>
+<p><img src="/images/compilation-3.png" alt="Compilation._addModuleChain.png"></p>
+<h2 id="6-addModule-–-记录模块"><a href="#6-addModule-–-记录模块" class="headerlink" title="6. addModule – 记录模块"></a>6. addModule – 记录模块</h2><p>该方法，功能上来讲，其实是一种 record module 的作用，主要就是将当前的这个 module 记录进 compilation 实例的各个属性中：</p>
+<ul>
+<li>首先获取模块的 request 属性，可以理解为就是模块的绝对路径，作为模块的 identifier。</li>
+<li>检测是否为**<em>已添加**</em>的模块，已添加则无需再次执行后续的 buildModule 操作~</li>
+<li>保存模块到<ul>
+<li>cache 属性 – 普通对象，key =&gt; module identifier, value =&gt; module instance</li>
+<li>_modules 属性 – Map&lt;string, Module&gt;, key =&gt; module identifier, value =&gt; module instance</li>
+<li>modules 属性 – 普通数组， Array<Module></li>
+</ul>
+</li>
+</ul>
+<p>而后返回:</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="built_in">module</span> <span class="comment">// 模块</span></span><br><span class="line">  issuer <span class="comment">// 路径相关的标志位</span></span><br><span class="line">  build <span class="comment">// 是否需要进行模块编译</span></span><br><span class="line">  dependencies <span class="comment">// 是否需要子模块一块编译</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="7-buildModule-–-编译模块"><a href="#7-buildModule-–-编译模块" class="headerlink" title="7. buildModule – 编译模块"></a>7. buildModule – 编译模块</h2><p>从函数名可以看出，该方法主要用于编译模块。该方法本身不具备编译模块的能力，该能力借助于 module 构造函数原型链上的构造方法 – build</p>
+<p>以 NormalModule 为例，build 方法首先更新了一些标志位和统计属性，而后执行 doBuild 方法。<br>doBuild 方法则可以看成是 loaders runner 的代理，负责取出文件的内容，过各种匹配到的 loader,<br>最终得到 string/buffer/sourceMap 等信息，这些信息的解析、生产逻辑均来自于 webpack-sources<br>后续会将这些信息挂载到 module 实例上<br>在 doBuild 方法的回调中，执行 module.parser.parse 方法，使用 acorn 的能力解析出 ast, 收集依赖，而后完成整个模块的编译。<br>在完成该模块的编译后，会触发 processModuleDependencies 去编译他的依赖模块。</p>
+<h3 id="7-1-执行逻辑图"><a href="#7-1-执行逻辑图" class="headerlink" title="7.1 执行逻辑图"></a>7.1 执行逻辑图</h3><p><img src="/images/compilation-4.png" alt="Compilation.buildModule.png"></p>
+<h3 id="7-2-关于收集依赖的部分"><a href="#7-2-关于收集依赖的部分" class="headerlink" title="7.2 关于收集依赖的部分"></a>7.2 关于收集依赖的部分</h3><p><strong><em>关于这里有个特别说明的点，调用 module.parser.parse 方法时，如果传入的直接是 AST, 而并非源码字符串的话，则跳过 acorn 将源码解析成 AST 的过程：</em></strong></p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> source === <span class="string">&#x27;object&#x27;</span> &amp;&amp; source !== <span class="literal">null</span>) &#123;</span><br><span class="line">  ast = source</span><br><span class="line">  comments = source.comments</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  comments = []</span><br><span class="line">  ast = Parser.parse(source, &#123;</span><br><span class="line">    sourceType: <span class="built_in">this</span>.sourceType,</span><br><span class="line">    onComment: comments,</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>**<br>在拿到 AST 后，会执行相应的 prewalkStatements 和 walkStatements，用于监测 import 类和 export 类语句，这里只以 import 类收集依赖为例：</p>
+<ul>
+<li>prewalkStatements<ul>
+<li>触发 import hook ，添加由 <strong><em>HarmonyImportDependencyParserPlugin</em></strong> 绑定的 tap，向 module.dependencies 中添加依赖模块的信息</li>
+<li>触发 importSpecifier hook, 添加由 <strong>*HarmonyImportDependencyParserPlugin *</strong>绑定的 tap</li>
+</ul>
+</li>
+<li>walkStatements<ul>
+<li>递归调用 walkStatements, 去挖掘类似 switch、catch、function 内部的 import 语句. 进而继续收集依赖</li>
+</ul>
+</li>
+</ul>
+<h2 id="8-processModuleDependencies-–-编译依赖模块"><a href="#8-processModuleDependencies-–-编译依赖模块" class="headerlink" title="8. processModuleDependencies – 编译依赖模块"></a>8. processModuleDependencies – 编译依赖模块</h2><p>该方法在当前 module 有依赖时，会由 _addModuleChain 触发。<br>大致作用就是：</p>
+<ul>
+<li>预处理 dependencies</li>
+<li>调用 addModuleDependencies<ul>
+<li>异步并发调用 buildModule</li>
+<li>如果依赖的依然有 dependencies, 则递归调用 processModuleDependencies 方法编译依赖模块。</li>
+</ul>
+</li>
+</ul>
+<p>图，略。</p>
+<h2 id="9-seal-–-封存模块"><a href="#9-seal-–-封存模块" class="headerlink" title="9. seal – 封存模块"></a>9. seal – 封存模块</h2><p>seal 方法是 Compilation 编译的最后一环，其作用即为生成 chunk、生成 chunk graph、生成 hash、生成 moduleAssets 等。</p>
+<p>整个 seal 的过程中，其中包含大量的 hook 触发，让我们可以从各个维度去审视、修改我们最后的生成物。<br>所以我们后续对这几十个 hook 的触发一笔带过，聚焦在最关键的几个步骤：</p>
+<ul>
+<li>生成 chunk、chunk graph</li>
+<li>生成 hash</li>
+<li>生成 module assets – “模块资源”</li>
+</ul>
+<h3 id="9-1-chunks、chunks-group、modules"><a href="#9-1-chunks、chunks-group、modules" class="headerlink" title="9.1 chunks、chunks group、modules"></a>9.1 chunks、chunks group、modules</h3><p>这里需要解释下 chunk 、 chunkGroup、和 module 的概念.</p>
+<p><em><strong>Module</strong></em><br>module 可以理解成我们工程里，会给到 webpack 加工和编译的一个个文件，他们之间通过 import 或其他方式引用，最终由 webpack 拼装组合。<br>就像是官网这幅图的左边部分，都可以认为是 module：<br><img src="/images/compilation-5.png" alt="image.png"></p>
+<p><em><strong>Chunk</strong></em><br>chunk 可以理解为最终输出的文件的中间态，是其在 webpack 编译时的状态，最终会编译成一个或多个文件并写入最终输出（一般为一个，可以用插件控制输出多个，例如 sourcemap 输出、css 输出等）<br>一般 chunk 可以分为三类：</p>
+<ul>
+<li>entry chunk – 入口 chunk</li>
+<li>split chunk – 代码分割生产的 chunk</li>
+<li>async module chunk – 异步加载模块的 chunk</li>
+</ul>
+<p>具体每一类我们后续再分别讲解生产的过程，这里只需要理解 chunk 作为输出文件的中间态即可</p>
+<p><em><strong>ChunkGroup</strong></em><br>ChunkGroup 一般包含一个 chunk，在使用类似 SplitChunksPlugins 的话，则会包含多个 chunks。<br>ChunkGroup 的实例中，包含几个数据域：</p>
+<ul>
+<li>chunks – 保存包含的 chunk</li>
+<li>_blocks – 用于保存异步加载的模块</li>
+<li>_children – 用于保存子 chunk group</li>
+<li>_parents – 用于保存父 chunk group</li>
+</ul>
+<h3 id="9-2-生成-chunk"><a href="#9-2-生成-chunk" class="headerlink" title="9.2 生成 chunk"></a>9.2 生成 chunk</h3><p>进入到该步骤时，首先触发了 beforeChunks 钩子</p>
+<p>遍历 _preparedEntrypoints(这个属性，在每次 addEntry 时会新注入一次)，每次遍历，依据当前的 entry，调用 compilation.addChunk 去生成一个新的 chunk，再新生成一个 Entrypoint 实例，Entrypoint 又继承自 ChunkGroup，并维护两者到 compilation 的一些数据字段中：</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="built_in">module</span> = preparedEntrypoint.module</span><br><span class="line"><span class="keyword">const</span> name = preparedEntrypoint.name</span><br><span class="line"></span><br><span class="line"><span class="comment">// new chunk</span></span><br><span class="line"><span class="keyword">const</span> chunk = <span class="built_in">this</span>.addChunk(name)</span><br><span class="line"><span class="comment">// new entrypoint</span></span><br><span class="line"><span class="keyword">const</span> entrypoint = <span class="keyword">new</span> Entrypoint(name)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 保存</span></span><br><span class="line">entrypoint.setRuntimeChunk(chunk)</span><br><span class="line">entrypoint.addOrigin(<span class="literal">null</span>, name, preparedEntrypoint.request)</span><br><span class="line"><span class="built_in">this</span>.namedChunkGroups.set(name, entrypoint)</span><br><span class="line"><span class="built_in">this</span>.entrypoints.set(name, entrypoint)</span><br><span class="line"><span class="built_in">this</span>.chunkGroups.push(entrypoint)</span><br></pre></td></tr></table></figure>
+<p>而后将 chunkGroup &lt;-&gt; chunk, chunk &lt;-&gt; module 建立连接：</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// chunkGroup 和 chunk 建立连接关系</span></span><br><span class="line">GraphHelpers.connectChunkGroupAndChunk(entrypoint, chunk)</span><br><span class="line"><span class="comment">// chunk 和 module 建立关系</span></span><br><span class="line">GraphHelpers.connectChunkAndModule(chunk, <span class="built_in">module</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// GraphHelpers realization</span></span><br><span class="line"><span class="keyword">const</span> connectChunkGroupAndChunk = <span class="function">(<span class="params">chunkGroup, chunk</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (chunkGroup.pushChunk(chunk)) &#123;</span><br><span class="line">    chunk.addGroup(chunkGroup)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> connectChunkAndModule = <span class="function">(<span class="params">chunk, <span class="built_in">module</span></span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">module</span>.addChunk(chunk)) &#123;</span><br><span class="line">    chunk.addModule(<span class="built_in">module</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而后为每个 module 标记深度层级，例如我们例子中：<br><img src="/images/compilation-6.png" alt="image.png"></p>
+<p>而后调用 processDependenciesBlocksForChunkGroups 方法，依据 module 的依赖关系去生成 chunk 间依赖关系 graph，我们的 demo 的依赖关系比较简单，且只有单独 chunk，所以暂时跳过这块。</p>
+<p>之后触发了 afterChunks 钩子，也标志着我们的 chunk 和 chunk graph 已生产完成。</p>
+<h3 id="9-3-optimize-相关钩子触发"><a href="#9-3-optimize-相关钩子触发" class="headerlink" title="9.3 optimize 相关钩子触发"></a>9.3 optimize 相关钩子触发</h3><p>从一个 optimize 钩子开始，标志着优化起！<br>然后接连触发：</p>
+<ul>
+<li>optimizeModulesBasic、optimizeModules、optimizeModulesAdvanced =&gt; afterOptimizeModules</li>
+<li>optimizeChunksBasic、optimizeChunks、optimizeChunksAdvanced =&gt; afterOptimizeChunks</li>
+<li>optimizeTree =&gt; afterOptimizeTree</li>
+<li>optimizeChunkModulesBasic、optimizeChunkModules、optimizeChunkModulesAdvanced =&gt; afterOptimizeChunkModules</li>
+<li>optimizeModuleOrder、advancedOptimizeModuleOrder</li>
+<li>modules id 相关：<ul>
+<li>reviveModules – RecordIdsPlugin</li>
+<li>beforeModuleIds – NamedModulesPlugin</li>
+<li>moduleIds -&gt; 调用 applyModuleIds 方法</li>
+<li>optimizeModuleIds</li>
+<li>afterOptimizeModuleIds</li>
+<li>module 、chunks 排序</li>
+</ul>
+</li>
+<li>chunks id 相关：<ul>
+<li>reviveChunks – RecordIdsPlugin</li>
+<li>optimizeChunkOrder – OccurrenceOrderChunkIdsPlugin</li>
+<li>beforeChunkIds – NamedChunksPlugin</li>
+<li>调用 applyChunkIds</li>
+<li>optimizeChunkIds</li>
+<li>afterOptimizeChunkIds</li>
+<li>chunks 排序</li>
+</ul>
+</li>
+</ul>
+<p>感觉每个环节都注入了很多很多的卡槽…</p>
+<h3 id="9-4-生成-hash"><a href="#9-4-生成-hash" class="headerlink" title="9.4 生成 hash"></a>9.4 生成 hash</h3><p>这一步首先触发 beforeHash 钩子，而后调用 Compilation.createHash 方法。<br>在该方法中：</p>
+<p>先初始化一个 hash 实例.<br>而后依次去更新 mainTemplate、chunkTemplate、moduleTemplate 的 hash</p>
+<p>之后生成每个模块的 hash，也会同时为每个 module 的 dependencies、blocks:</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Module -- extends DependenciesBlock</span></span><br><span class="line"><span class="function"><span class="title">updateHash</span>(<span class="params">hash</span>)</span> &#123;</span><br><span class="line">  hash.update(<span class="string">`<span class="subst">$&#123;<span class="built_in">this</span>.id&#125;</span>`</span>);</span><br><span class="line">  hash.update(<span class="built_in">JSON</span>.stringify(<span class="built_in">this</span>.usedExports));</span><br><span class="line">  <span class="built_in">super</span>.updateHash(hash);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// DependenciesBlock</span></span><br><span class="line"><span class="function"><span class="title">updateHash</span>(<span class="params">hash</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> dep <span class="keyword">of</span> <span class="built_in">this</span>.dependencies) dep.updateHash(hash);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> block <span class="keyword">of</span> <span class="built_in">this</span>.blocks) block.updateHash(hash);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> variable <span class="keyword">of</span> <span class="built_in">this</span>.variables) variable.updateHash(hash);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最终生成的 module hash 类似：<br><img src="/images/compilation-7.png" alt="image.png"></p>
+<p>而后为每个 chunk 生成 hash，最终生成类似：<br><img src="/images/compilation-8.png" alt="image.png"></p>
+<p>最终生成整个 compilation 的 hash 和 fullhash:<br><img src="/images/compilation-9.png" alt="image.png"><br>最后触发了 afterHash，代表着整体 hash 化的工作完成</p>
+<h3 id="9-4-生成-module-assets"><a href="#9-4-生成-module-assets" class="headerlink" title="9.4 生成 module assets"></a>9.4 生成 module assets</h3><p>会先触发 beforeModuleAssets 钩子，而后调用 createModuleAssets, 用来创建 module 相关的资源，但是我们的 demo 中并没有触发到 - -</p>
+<p>而后触发 beforeChunkAssets 钩子，之后调用 createChunksAssets 方法，该方法中，包含对每个 chunk 的：</p>
+<p>_<strong>模板选取</strong>_：</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> template = chunk.hasRuntime() ? <span class="built_in">this</span>.mainTemplate : <span class="built_in">this</span>.chunkTemplate</span><br></pre></td></tr></table></figure>
+<p>_<strong>manifest 生成</strong>_，生成物中包含了本次 render 的全部要素：<br><img src="/images/compilation-10.png" alt="image.png"><br>遍历 manifest，使用每次遍历时的单个 fileManifest 的 render 方法，生成 source，最终写入到 Compilation 的 assets 属性中，以 filename 为 key, 以 source 实例为 value，最终结果类似：<br><img src="/images/compilation-11.png" alt="image.png"><br>至此， Compilation 完成了他的全部任务，即：生成 module assets(编译资源)<br>后续将自身实例 compilation 交给 compiler 实例，去完成后续的 assets emit(资源写入 dist) 操作。</p>
+<h2 id="10-完成"><a href="#10-完成" class="headerlink" title="10. 完成~"></a>10. 完成~</h2></div><div class="tags"><a href="/tags/javascript/"><i class="fa fa-tag"></i>javascript</a><a href="/tags/%E5%B7%A5%E7%A8%8B%E5%8C%96/"><i class="fa fa-tag"></i>工程化</a><a href="/tags/webpack/"><i class="fa fa-tag"></i>webpack</a></div><div class="post-nav"><a class="next" href="/2021/01/29/webpack/Complier-webpack-config-%E6%97%B6%E5%BE%97%E5%88%B0%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F/">Complier -- webpack(config) 时得到的是什么？</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/%E6%9D%82%E8%B0%88/" style="font-size: 15px;">杂谈</a> <a href="/tags/HTTP/" style="font-size: 15px;">HTTP</a> <a href="/tags/HTTP-%E6%9D%83%E5%A8%81%E6%8C%87%E5%8D%97/" style="font-size: 15px;">HTTP 权威指南</a> <a href="/tags/%E3%80%8A%E4%B8%8D%E5%9C%A8%E4%BB%96%E6%96%B9%E3%80%8B/" style="font-size: 15px;">《不在他方》</a> <a href="/tags/%E5%89%8D%E7%AB%AF/" style="font-size: 15px;">前端</a> <a href="/tags/js/" style="font-size: 15px;">js</a> <a href="/tags/You-Don-t-Know-Javascript/" style="font-size: 15px;">You Don't Know Javascript</a> <a href="/tags/%E3%80%8A%E5%A4%A9%E6%89%8D%E5%9C%A8%E5%B7%A6-%E7%96%AF%E5%AD%90%E5%9C%A8%E5%8F%B3%E3%80%8B/" style="font-size: 15px;">《天才在左 疯子在右》</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 15px;">数据结构</a> <a href="/tags/%E5%9F%BA%E6%9C%AC%E5%8A%9F/" style="font-size: 15px;">基本功</a> <a href="/tags/parser/" style="font-size: 15px;">parser</a> <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" style="font-size: 15px;">源码学习</a> <a href="/tags/javascript/" style="font-size: 15px;">javascript</a> <a href="/tags/Acorn-js/" style="font-size: 15px;">Acorn.js</a> <a href="/tags/Babel/" style="font-size: 15px;">Babel</a> <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%8C%96/" style="font-size: 15px;">工程化</a> <a href="/tags/leetcode/" style="font-size: 15px;">leetcode</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 15px;">算法</a> <a href="/tags/http/" style="font-size: 15px;">http</a> <a href="/tags/rfc/" style="font-size: 15px;">rfc</a> <a href="/tags/uri/" style="font-size: 15px;">uri</a> <a href="/tags/%E7%BC%96%E8%AF%91/" style="font-size: 15px;">编译</a> <a href="/tags/%E4%B8%A4%E5%91%A8%E8%87%AA%E5%88%B6%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/" style="font-size: 15px;">两周自制脚本语言</a> <a href="/tags/jquery/" style="font-size: 15px;">jquery</a> <a href="/tags/%E6%8A%80%E6%9C%AF%E9%92%BB%E7%A0%94/" style="font-size: 15px;">技术钻研</a> <a href="/tags/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" style="font-size: 15px;">读书笔记</a> <a href="/tags/%E5%9F%BA%E7%A1%80/" style="font-size: 15px;">基础</a> <a href="/tags/%E5%89%8D%E7%AB%AF%E8%BF%9B%E9%98%B6/" style="font-size: 15px;">前端进阶</a> <a href="/tags/%E5%89%8D%E7%AB%AF%E5%9B%BD%E9%99%85%E5%8C%96/" style="font-size: 15px;">前端国际化</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 15px;">网络</a> <a href="/tags/typescript/" style="font-size: 15px;">typescript</a> <a href="/tags/Array-%E6%96%B9%E6%B3%95/" style="font-size: 15px;">Array 方法</a> <a href="/tags/%E5%89%8D%E7%AB%AF%E5%9F%BA%E7%A1%80/" style="font-size: 15px;">前端基础</a> <a href="/tags/virtual-dom/" style="font-size: 15px;">virtual dom</a> <a href="/tags/%E9%98%9F%E5%88%97/" style="font-size: 15px;">队列</a> <a href="/tags/%E6%95%B0%E7%BB%84/" style="font-size: 15px;">数组</a> <a href="/tags/algorithm/" style="font-size: 15px;">algorithm</a> <a href="/tags/sort/" style="font-size: 15px;">sort</a> <a href="/tags/ecmascript/" style="font-size: 15px;">ecmascript</a> <a href="/tags/webpack/" style="font-size: 15px;">webpack</a></div></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2021 <a href="/." rel="nofollow">叁歌.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="/js/copycode.js" successtext="复制成功!"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox/dist/jquery.fancybox.min.css"></div></body></html>
