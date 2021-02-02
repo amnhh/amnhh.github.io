@@ -3,6 +3,13 @@
 m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 ga('create','G-HEVC7VFM0G','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = 'https://hm.baidu.com/hm.js?' + '3b74b15709da4bba44d03cc55664915f';
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
 </script><script type="text/javascript" src="//cdn.jsdelivr.net/npm/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 5.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">js 中的逗号运算符</h1><a id="logo" href="/.">叁歌</a><p class="description">To be the best of best.</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">js 中的逗号运算符</h1><div class="post-meta">2019-03-16<span> | </span><span class="category"><a href="/categories/%E6%97%A7%E5%8D%9A%E5%AE%A2/"> 旧博客  </a></span></div><div class="post-content"><p>以下内容，为博主在看周爱民老师的《Javascript 语言精髓与编程实践》第 2.7.5 章节的读书笔记，觉得将博主多年对括号的用法的疑惑解决了，所以整理到这里以日后查看</p>
 <p>首先由一个🌰开始：</p>
 <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// example 1 =&gt; a = 3</span></span><br><span class="line">a = (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>) </span><br><span class="line"><span class="comment">// example 2 =&gt; a = 1</span></span><br><span class="line">a = <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span></span><br><span class="line"><span class="comment">// example 3 =&gt; a = [1, 2, 5, 6]</span></span><br><span class="line">a = [<span class="number">1</span>, <span class="number">2</span>, (<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>), <span class="number">6</span>]</span><br></pre></td></tr></table></figure>

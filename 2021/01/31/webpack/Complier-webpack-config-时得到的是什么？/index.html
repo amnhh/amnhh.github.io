@@ -3,6 +3,13 @@
 m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 ga('create','G-HEVC7VFM0G','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = 'https://hm.baidu.com/hm.js?' + '3b74b15709da4bba44d03cc55664915f';
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
 </script><script type="text/javascript" src="//cdn.jsdelivr.net/npm/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 5.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">webpack - Complier -- webpack(config) 时得到的是什么？</h1><a id="logo" href="/.">叁歌</a><p class="description">To be the best of best.</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">webpack - Complier -- webpack(config) 时得到的是什么？</h1><div class="post-meta">2021-01-31</div><div class="post-content"><h2 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h2><p>本文旨在通过 阅读和 debug 的方式，了解 Compiler 为 webpack 做了什么事情，并学习其中的设计优秀的点。</p>
 <h2 id="2-Compiler-和-webpack-有什么关系？"><a href="#2-Compiler-和-webpack-有什么关系？" class="headerlink" title="2. Compiler 和 webpack 有什么关系？"></a>2. Compiler 和 webpack 有什么关系？</h2><p>首先我们知道，在自己调用 webpack node api 时，我们一般这么写：</p>
 <figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> config = <span class="built_in">require</span>(<span class="string">&#x27;./webpack.config&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> webpack = <span class="built_in">require</span>(<span class="string">&#x27;webpack&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> compiler = webpack(config)</span><br><span class="line"></span><br><span class="line">compiler.run()</span><br></pre></td></tr></table></figure>

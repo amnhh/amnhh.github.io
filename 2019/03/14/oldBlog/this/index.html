@@ -3,6 +3,13 @@
 m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 ga('create','G-HEVC7VFM0G','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = 'https://hm.baidu.com/hm.js?' + '3b74b15709da4bba44d03cc55664915f';
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
 </script><script type="text/javascript" src="//cdn.jsdelivr.net/npm/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 5.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">this 的用法</h1><a id="logo" href="/.">叁歌</a><p class="description">To be the best of best.</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">this 的用法</h1><div class="post-meta">2019-03-14<span> | </span><span class="category"><a href="/categories/%E6%97%A7%E5%8D%9A%E5%AE%A2/"> 旧博客  </a></span></div><div class="post-content"><p>以下都是我本人的理解, 有不对的地方还请指出, 谢谢</p>
 <p>首先,  函数调用的时候才会涉及到 <code>this</code> 的各种问题, 不在函数调用里面, 都会指向全局对象, <code>browser</code> 里的 <code>window</code> 和 <code>node</code> 环境下的 <code>global</code></p>
 <p>我也做了一些 <code>demo</code> 去测试, 最终还是得到了一个老生常谈的结论, 在不 <code>call</code> 或者 <code>apply</code> 的情况下, 谁调用, <code>this</code> 就指向谁</p>

@@ -3,6 +3,13 @@
 m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 ga('create','G-HEVC7VFM0G','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = 'https://hm.baidu.com/hm.js?' + '3b74b15709da4bba44d03cc55664915f';
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
 </script><script type="text/javascript" src="//cdn.jsdelivr.net/npm/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 5.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">学习 ts 过程中特殊关注点的记录</h1><a id="logo" href="/.">叁歌</a><p class="description">To be the best of best.</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">学习 ts 过程中特殊关注点的记录</h1><div class="post-meta">2020-05-06<span> | </span><span class="category"><a href="/categories/%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF/"> 前端技术  </a><a href="/categories/%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF/%E5%BC%80%E5%8F%91%E5%9F%BA%E7%A1%80/"> 开发基础  </a><a href="/categories/%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF/%E5%BC%80%E5%8F%91%E5%9F%BA%E7%A1%80/Typescript/"> Typescript  </a></span></div><div class="post-content"><h2 id="枚举类型"><a href="#枚举类型" class="headerlink" title="枚举类型"></a>枚举类型</h2><p>我们知道在 <code>Typescript</code> 中新增了枚举类型，我们不需要关注它支持的诸如默认索引或者自定义索引等内容，只需要关注其本身的定义和向 <code>js</code> 代码的转义</p>
 <p>例如，我们定义一个 <code>Tree1</code>：</p>
 <figure class="highlight ts"><table><tr><td class="code"><pre><span class="line"><span class="built_in">enum</span> Tree1 &#123;</span><br><span class="line">    branch0,</span><br><span class="line">    branch1,</span><br><span class="line">    branch2,</span><br><span class="line">    branch3</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
