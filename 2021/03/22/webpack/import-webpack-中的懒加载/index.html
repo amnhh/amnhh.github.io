@@ -33,13 +33,11 @@ gtag('config', 'G-HEVC7VFM0G');
 <figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">;(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">  __webpack_require__.f = &#123;&#125;</span><br><span class="line">  <span class="comment">// This file contains only the entry chunk.</span></span><br><span class="line">  <span class="comment">// The chunk loading function for additional chunks</span></span><br><span class="line">  __webpack_require__.e = <span class="function">(<span class="params">chunkId</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">Promise</span>.all(</span><br><span class="line">      <span class="built_in">Object</span>.keys(__webpack_require__.f).reduce(<span class="function">(<span class="params">promises, key</span>) =&gt;</span> &#123;</span><br><span class="line">        __webpack_require__.f[key](chunkId, promises)</span><br><span class="line">        <span class="keyword">return</span> promises</span><br><span class="line">      &#125;, [])</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)()</span><br></pre></td></tr></table></figure>
 <p>该方法的整体作用，是使用 <code>__webpack_require__.f.j</code>  加载相应的异步 <code>chunk</code> ，在加载的过程中会产出和包装多个 <code>promise</code> 实例，将这些 <code>promise</code>  实例包裹到一个 <code>Promise.all</code> 中返回</p>
 <p>在 <code>__webpack_require__.f.j</code>  中，先是生成了一个用于锁定 <code>chunk</code>  状态的 <code>promise</code> ，并保存好它的 <code>resolve</code>和 <code>reject</code>  方法，存于 <code>installedChunks</code>  中。</p>
-<blockquote>
 <p><code>installedChunk</code>  变量为一个 <code>hashMap</code>  结构，用于存储当前<strong>加载完成</strong>和<strong>加载中</strong>的 <code>chunk</code> ， <code>key</code>  为 <code>chunkName</code>， <code>value</code>  有两种形式：</p>
-</blockquote>
-<blockquote>
-<p>a. <code>0</code> : 已经加载完成的 <code>chunk</code> ，会被记作 <code>0</code></p>
-</blockquote>
-<p>b. &gt; <code>[resolve, reject, promise]</code>: 加载中的 &gt; <code>chunk</code>  会被暂存 &gt; <code>resolve</code>  和 &gt; <code>reject</code>  函数，用来外部改变锁 定 &gt; <code>chunk</code>  加载过程的那个 &gt; <code>promise</code>  的状态。</p>
+<ul>
+<li>a. <code>0</code> : 已经加载完成的 <code>chunk</code> ，会被记作 <code>0</code></li>
+<li>b. <code>[resolve, reject, promise]</code>: 加载中的 &gt; <code>chunk</code>  会被暂存 &gt; <code>resolve</code>  和 &gt; <code>reject</code>  函数，用来外部改变锁 定 &gt; <code>chunk</code>  加载过程的那个 &gt; <code>promise</code>  的状态。</li>
+</ul>
 <p>而后进入到 <code>__webpack_require__.l</code>  方法中，该方法主要负责新建 <code>&lt;script&gt;</code>  标签，使用 <code>jsonp</code>  促使浏览器去加载异步 <code>chunk</code>  对应的 <code>js</code>  资源。在资源加载执行完成后，如果需要销毁的话，会销毁这个 &lt;<code>script&gt;</code>  标签~</p>
 <p>资源执行时，主体是一个类似以下的调用语句：</p>
 <figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">webpackChunkWebpack.push([</span><br><span class="line">  [chunksIds],</span><br><span class="line">  &#123;</span><br><span class="line">    modulePath: <span class="function">(<span class="params">__webpack_exports__, webpack__require__</span>) =&gt;</span> moduleValue,</span><br><span class="line">  &#125;,</span><br><span class="line">])</span><br></pre></td></tr></table></figure>
