@@ -36,7 +36,7 @@ gtag('config', 'G-HEVC7VFM0G');
 <p><code>installedChunk</code>  变量为一个 <code>hashMap</code>  结构，用于存储当前<strong>加载完成</strong>和<strong>加载中</strong>的 <code>chunk</code> ， <code>key</code>  为 <code>chunkName</code>， <code>value</code>  有两种形式：</p>
 <ul>
 <li>a. <code>0</code> : 已经加载完成的 <code>chunk</code> ，会被记作 <code>0</code></li>
-<li>b. <code>[resolve, reject, promise]</code>: 加载中的 &gt; <code>chunk</code>  会被暂存 &gt; <code>resolve</code>  和 &gt; <code>reject</code>  函数，用来外部改变锁 定 &gt; <code>chunk</code>  加载过程的那个 &gt; <code>promise</code>  的状态。</li>
+<li>b. <code>[resolve, reject, promise]</code>: 加载中的 <code>chunk</code>  会被暂存 <code>resolve</code>  和 <code>reject</code>  函数，用来外部改变锁定 <code>chunk</code>  加载过程的那个 <code>promise</code>  的状态。</li>
 </ul>
 <p>而后进入到 <code>__webpack_require__.l</code>  方法中，该方法主要负责新建 <code>&lt;script&gt;</code>  标签，使用 <code>jsonp</code>  促使浏览器去加载异步 <code>chunk</code>  对应的 <code>js</code>  资源。在资源加载执行完成后，如果需要销毁的话，会销毁这个 &lt;<code>script&gt;</code>  标签~</p>
 <p>资源执行时，主体是一个类似以下的调用语句：</p>
